@@ -4,10 +4,9 @@ FROM debian:${VARIANT}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
+ENV INSTALL_DIR="/root"
 
 # Arguments
-ARG CONTAINER_USER=esp
-ARG CONTAINER_GROUP=esp
 ARG ESP_BOARD=all
 ARG GITHUB_TOKEN
 
@@ -17,17 +16,13 @@ RUN apt-get update \
     libusb-1.0-0 libssl-dev libudev-dev pkg-config \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
 
-# Set users
-RUN adduser --disabled-password --gecos "" ${CONTAINER_USER}
-USER ${CONTAINER_USER}
-WORKDIR /home/${CONTAINER_USER}
-
 # Install rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
     --default-toolchain none -y --profile minimal
 
 # Update envs
-ENV PATH=${PATH}:/home/${CONTAINER_USER}/.cargo/bin
+ENV PATH=${PATH}:${INSTALL_DIR}/.cargo/bin 
+# using ${HOME} in the above line resolves to "/" not "/root" which leads to "Error: espup::toolchain::rust::missing_rust. Setting it explicitly for now"
 
 # Install extra crates
 RUN ARCH=$($HOME/.cargo/bin/rustup show | grep "Default host" | sed -e 's/.* //') && \
@@ -51,9 +46,9 @@ RUN if [ -n "${GITHUB_TOKEN}" ]; then export GITHUB_TOKEN=${GITHUB_TOKEN}; fi  \
     && ${HOME}/.cargo/bin/espup install\
     --targets "${ESP_BOARD}" \
     --log-level debug \
-    --export-file /home/${CONTAINER_USER}/export-esp.sh
+    --export-file ${HOME}/export-esp.sh
 
 # Activate ESP environment
-RUN echo "source /home/${CONTAINER_USER}/export-esp.sh" >> ~/.bashrc
+RUN echo "source ${HOME}/export-esp.sh" >> ~/.bashrc
 
 CMD [ "/bin/bash" ]
