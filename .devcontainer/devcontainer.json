@@ -10,6 +10,9 @@
       "ESP_BOARD": "esp32"
     }
   },
+  "runArgs": [
+    "--privileged"
+  ],
   "customizations": {
     "vscode": {
       "settings": {
