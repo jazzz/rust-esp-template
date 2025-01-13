@@ -1,0 +1,1 @@
+usbip attach -r host.docker.internal -d 0-0-0
